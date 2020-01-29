@@ -127,23 +127,93 @@ GROUP BY last_name, first_name
 ORDER BY last_name;
 
 
+/* The music of Queen and Kris Kristofferson have seen an unlikely resurgence. As an unintended consequence, 
+films starting with the letters `K` and `Q` have also soared in popularity. 
+Use subqueries to display the titles of movies starting with the letters `K` and `Q` whose language is English. */
+SELECT 
+	title
+FROM 
+	film
+WHERE 
+	title like 'K%' OR title like 'Q%'
+    AND
+	language_id in (SELECT language_id 
+					FROM language 
+					WHERE name='English');
+
 -- 7b. Use subqueries to display all actors who appear in the film `Alone Trip`.
+SELECT first_name, last_name
+FROM actor
+WHERE actor_id in (SELECT actor_id 
+				   FROM film_actor 
+                   WHERE film_id in (SELECT film_id 
+									 FROM film 
+                                     WHERE title = 'Alone Trip')
+                   );
 
--- 7c. You want to run an email marketing campaign in Canada, for which you will need the names and email addresses of all Canadian customers. Use joins to retrieve this information.
 
--- 7d. Sales have been lagging among young families, and you wish to target all family movies for a promotion. Identify all movies categorized as _family_ films.
+/* 7c. You want to run an email marketing campaign in Canada, for which you will need the names and email addresses 
+of all Canadian customers. Use joins to retrieve this information. */
+SELECT first_name, last_name, email
+FROM customer
+WHERE address_id in (SELECT address_id
+					 FROM address
+					 WHERE city_id in (SELECT city_id 
+									   FROM city 
+									   WHERE country_id in (SELECT country_id 
+															   FROM country 
+															   WHERE country='Canada')
+										)
+						);
+
+/* 7d. Sales have been lagging among young families, and you wish to target all family movies for a promotion. 
+Identify all movies categorized as _family_ films. */
+SELECT title
+FROM film
+WHERE film_id in (SELECT film_id
+				  FROM film_category
+				  WHERE category_id in (SELECT category_id 
+										FROM category 
+                                        WHERE name='Family')
+				  );
 
 -- 7e. Display the most frequently rented movies in descending order.
+SELECT f.title, COUNT(rental_id) as rentals
+FROM film f
+JOIN inventory i ON f.film_id = i.film_id
+JOIN rental r ON i.inventory_id = r.inventory_id
+GROUP BY f.title
+ORDER BY rentals DESC
+LIMIT 25;
 
 -- 7f. Write a query to display how much business, in dollars, each store brought in.
+SELECT s.store_id, SUM(amount) as total_biz$
+FROM payment p
+JOIN staff s using (staff_id)
+GROUP BY s.store_id;
 
 -- 7g. Write a query to display for each store its store ID, city, and country.
+SELECT s.store_id as 'store id', ci.city as city, co.country as country
+FROM store s
+JOIN address a ON s.address_id = a.address_id
+JOIN city ci ON a.city_id = ci.city_id
+JOIN country co ON ci.country_id = co.country_id;
 
--- 7h. List the top five genres in gross revenue in descending order. (**Hint**: you may need to use the following tables: category, film_category, inventory, payment, and rental.)
+/* 7h. List the top five genres in gross revenue in descending order. (**Hint**: you may need to use the following tables: 
+category, film_category, inventory, payment, and rental.) */
 
+SELECT ca.name as genres, SUM(p.amount) as revenue
+FROM category ca
+JOIN film_category fc ON ca.category_id = fc.category_id
+JOIN inventory i ON fc.film_id = i.film_id
+JOIN rental r ON i.inventory_id = r.inventory_id
+JOIN payment p ON r.rental_id = p.rental_id
+GROUP BY genres
+ORDER BY revenue DESC
+LIMIT 5;
 
-
--- 8a. In your new role as an executive, you would like to have an easy way of viewing the Top five genres by gross revenue. Use the solution from the problem above to create a view. If you haven't solved 7h, you can substitute another query to create a view.
+/* 8a. In your new role as an executive, you would like to have an easy way of viewing the Top five genres by gross revenue. 
+Use the solution from the problem above to create a view. If you haven't solved 7h, you can substitute another query to create a view. */
 
 -- 8b. How would you display the view that you created in 8a?
 
